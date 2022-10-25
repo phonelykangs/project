@@ -10,9 +10,11 @@
 #include<errno.h>
 #include<time.h>
 #include<unistd.h>
+#include<sys/wait.h>
 
-#define  BUFSIZE   1024
-#define  IP_SIZE   40
+#define  BUFSIZE        1024
+#define  IP_SIZE        40
+#define  PROCESS_NUM    8
 
 static void server_job(int sd){
     char str[BUFSIZ];
@@ -25,14 +27,32 @@ static void server_job(int sd){
         perror("send() ");
         exit(1);
     }
+    free(ct);
+}
+
+void server_loop(int sd){
+    char client_ip[IP_SIZE];
+    int newsd;
+    struct sockaddr_in remote_addr;
+    socklen_t remote_addr_len;
+    remote_addr_len = sizeof(remote_addr);
+    while(1){
+        newsd =  accept(sd,(struct sockaddr *)&remote_addr, &remote_addr_len);
+        if(newsd < 0 && (newsd != EINTR || newsd != EAGAIN)){
+            perror("accept() ");
+            exit(1);
+        }
+        inet_ntop(AF_INET,&remote_addr.sin_addr,client_ip,IP_SIZE);
+        printf("[%d] Client  addr : %s,\tport : %d \n",getpid(), client_ip,ntohs(remote_addr.sin_port));
+        server_job(newsd);
+        close(newsd);
+    }
 }
 
 int main(){
     int sd;
-    struct sockaddr_in local_addr, remote_addr;
-    socklen_t local_addr_len, remote_addr_len;
-    int newsd;
-    char client_ip[IP_SIZE];
+    struct sockaddr_in local_addr;
+    socklen_t local_addr_len;
     pid_t pid;
 
     sd = socket(AF_INET,SOCK_STREAM,0);
@@ -62,28 +82,22 @@ int main(){
         exit(1);
     }
 
-    remote_addr_len = sizeof(remote_addr);
-    while(1){
-        newsd =  accept(sd,(struct sockaddr *)&remote_addr, &remote_addr_len);
-        if(newsd < 0 && (newsd != EINTR || newsd != EAGAIN)){
-            perror("accept() ");
-            exit(1);
-        }
+    for(int i = 0;i < PROCESS_NUM;++i){
         pid = fork();
         if(pid < 0){
             perror("fork() ");
             exit(1);
         }
         if(pid == 0){
-            close(sd);
-            inet_ntop(AF_INET,&remote_addr.sin_addr,client_ip,IP_SIZE);
-            printf("Client  addr : %s,\tport : %d \n",client_ip,ntohs(remote_addr.sin_port));
-            server_job(newsd);
-            close(newsd);
+            server_loop(sd);
             exit(0);
         }
-        close(newsd);
     }
+
+    for(int i = 0;i < PROCESS_NUM;++i){
+        wait(NULL);
+    }
+    
     close(sd);
     exit(0);
 }
