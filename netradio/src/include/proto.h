@@ -24,6 +24,7 @@ struct msg_channle_st{
 
 struct msg_listdesc_st{
     chnid_t chnid;
+    uint8_t length;
     uint8_t description[1];
 }__attribute__((packed));
 

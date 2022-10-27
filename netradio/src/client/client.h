@@ -5,6 +5,7 @@
 #define     MAX_PLAYER_CMD_SIZE     100
 #define     DEFAULT_PLAYER_CMD      "/usr/bin/mpg123 - > /dev/null"
 #define     NETWORK_INTERFACE       "eth0"
+#define     SERVER_IP_SIZE_MAX      50    
 
 
 struct client_config_st{
