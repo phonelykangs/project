@@ -7,7 +7,7 @@
 #include<errno.h>
 #include<unistd.h>
 
-#define     DEFAULT_TOKEN       200
+#define     DEFAULT_TOKEN       15
 #define     DEFAULT_MAX_TOKEN   500
 #define     BUFSIZE             1024
 

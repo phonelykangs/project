@@ -1,4 +1,4 @@
-CFLAGS+=-I.
+CFLAGS+=-I. -Wall
 
 token_bucket:main.o token_bucket.o
 	gcc $^ -o $@

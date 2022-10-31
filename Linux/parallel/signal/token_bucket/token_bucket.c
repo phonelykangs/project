@@ -5,6 +5,7 @@
 #include<signal.h>
 #include<unistd.h>
 #include<stdbool.h>
+#include<sys/time.h>
 
 #define     MIN(x,y)    ((x) < (y) ? (x) : (y))
 
@@ -19,7 +20,8 @@ typedef void(*sighandler_t)(int);
 
 static struct token_bucket_st * bucket_list[TOKEN_BUCKET_NUM];
 static bool inited = false;
-static sighandler_t alarm_save;
+static struct itimerval itv, otv;
+static struct sigaction act,oldact;
 
 static int getFreePos(){
     int pos = 0;
@@ -30,8 +32,10 @@ static int getFreePos(){
     return -1;
 }
 
-void signal_handle(int i){
-    alarm(1);
+void signal_handle(int i,siginfo_t * siginfo, void *unused){
+    if(siginfo->si_code != SI_KERNEL){
+        return ;
+    }
     struct token_bucket_st * me;
     int pos = 0;
     for(;pos < TOKEN_BUCKET_NUM;++pos){
@@ -44,19 +48,38 @@ void signal_handle(int i){
     }
 }
 
-
 static void unload_module(){
-    signal(SIGALRM,alarm_save);
-    alarm(0);
+    setitimer(ITIMER_REAL,&otv,NULL);
+    if(sigaction(SIGALRM,&oldact,NULL) < 0){
+        perror("sigaction() ");
+        exit(1);
+    }
     for(int i = 0;i < TOKEN_BUCKET_NUM;++i){
         free(bucket_list[i]);
     }
 }
 
 static int load_module(){
-    alarm_save = signal(SIGALRM,signal_handle);
-    alarm(1);
+    itv.it_value.tv_sec = 2;
+    itv.it_value.tv_usec = 0;
+    itv.it_interval.tv_sec = 1;
+    itv.it_interval.tv_usec = 0;
+
+    act.sa_sigaction = signal_handle;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = SA_SIGINFO;
+
+    if(sigaction(SIGALRM,&act,&oldact) < 0){
+        perror("sigaction() ");
+        exit(1);
+    }
+    
+    if(setitimer(ITIMER_REAL,&itv,&otv) < 0){
+        perror("setitimer() ");
+        exit(1);
+    }
     atexit(unload_module);
+    return 0;
 }
 
 token_bucket_t *init(int cps,int token_max){
