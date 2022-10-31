@@ -5,15 +5,18 @@
 #include<sys/types.h>
 #include<sys/stat.h>
 #include<fcntl.h>
+#include<signal.h>
+#include<syslog.h>
 
 #define FILE_NAME "/tmp/out"
+
+FILE *fp;
 
 static int daemonize(){
     pid_t pid;
     int fd;
     pid = fork();
     if(pid < 0){
-        perror("fork() ");
         return -1;
     }
     if(pid > 0){
@@ -22,12 +25,10 @@ static int daemonize(){
     else{
         fd = open("/dev/null",O_RDWR);
         if(fd < 0){
-            perror("open()");
-            return -1;
+            return -2;
         }
         if(setsid() < 0){
-            perror("setsid() ");
-            return -1;
+            return -3;
         }
         dup2(fd,0);
         dup2(fd,1);
@@ -37,28 +38,51 @@ static int daemonize(){
         }
 
         chdir("/");
+        umask(0);
         return 0;
     }
 }
 
+static void sighandle (int s){
+    closelog();
+    fclose(fp);
+    exit(0);
+}
+
 int main(){
+    
+    int i = 0;
+    openlog("mydaemon",LOG_PID,LOG_DAEMON);
+
+    sigset_t sset;
+    sigemptyset(&sset);
+    sigaddset(&sset,SIGINT);
+    sigaddset(&sset,SIGQUIT);
+    sigaddset(&sset,SIGTERM);
+
+    struct sigaction act;
+    act.sa_handler = sighandle;
+    act.sa_mask = sset;
+    act.sa_flags = 0;
+    act.sa_restorer = NULL;
+
+    sigaction(SIGINT,&act,NULL);
+    sigaction(SIGTERM,&act,NULL);
+    sigaction(SIGQUIT,&act,NULL);
+
     if(daemonize()){
+        syslog(LOG_ERR,"daemonize failed!");
         exit(1);
     }
-    FILE *fp;
-    int i = 0;
-    
+    syslog(LOG_NOTICE,"daemonize success!");
     fp = fopen(FILE_NAME,"w");
     if(fp == NULL){
+        syslog(LOG_ERR,"open file failed!");
         exit(1);
     }
-    
     for(;;++i){
         fprintf(fp,"%d\n",i);
         fflush(fp);
         sleep(1);
     }
-
-    fclose(fp);
-    exit(1);
 }
