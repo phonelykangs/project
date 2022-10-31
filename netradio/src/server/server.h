@@ -1,0 +1,1 @@
+#define     DEFAULT_SERVER_PORT     "1997"
