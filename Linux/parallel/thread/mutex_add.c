@@ -10,7 +10,7 @@
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static void * addfunc(void){
+static void * addfunc(void * p){
     FILE * fp;
     char LINEBUF[BUFFER_SIZE];
 
