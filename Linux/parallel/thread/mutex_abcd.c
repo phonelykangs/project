@@ -7,7 +7,10 @@
 
 #define     THREAD_NUM      4
 
-static pthread_mutex_t mutex_arr[THREAD_NUM];
+static pthread_mutex_t mutex;
+static pthread_cond_t cond;
+
+static int shm = 0;
 
 struct args_st{
     int num;
@@ -16,9 +19,15 @@ struct args_st{
 static void * print(void * p){
     int num = ((struct args_st *)p)->num;
     while(1){
-        pthread_mutex_lock(mutex_arr+num);
+        pthread_mutex_lock(&mutex);
+        while(num != shm){
+            pthread_cond_wait(&cond,&mutex);
+        }
         fprintf(stdout,"%c",'a'+num);
-        pthread_mutex_unlock(mutex_arr+((num+1)%THREAD_NUM));
+        ++shm;
+        shm %= THREAD_NUM;
+        pthread_mutex_unlock(&mutex);
+        pthread_cond_broadcast(&cond);
     }
     pthread_exit(p);
 }
@@ -31,8 +40,6 @@ int main(){
     pthread_t tid[THREAD_NUM];
 
     for(int i = 0;i < THREAD_NUM;++i){
-        pthread_mutex_init(mutex_arr+i,NULL);
-        pthread_mutex_lock(mutex_arr+i);
         
         args = (struct args_st *)malloc(sizeof(struct args_st));
         if(args == NULL){
@@ -46,13 +53,13 @@ int main(){
             exit(1);
         }
     }
-    pthread_mutex_unlock(mutex_arr);
     alarm(1);
 
     for(int i = 0;i < THREAD_NUM;++i){
         pthread_join(tid[i],&ptr);
         free((struct args_st *)ptr);
-        pthread_mutex_destroy(mutex_arr+i);
     }
+    pthread_mutex_destroy(&mutex);
+    pthread_cond_destroy(&cond);
     exit(0);
 }
