@@ -7,7 +7,7 @@
 #define     THREAD_NUM      8
 
 #define     START           30000000
-#define     END             30000200
+#define     END             30002200
 
 struct args_st{
     int num;
@@ -16,6 +16,7 @@ struct args_st{
 static int task = 0;
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t  cond = PTHREAD_COND_INITIALIZER;
 
 static void * func(void * p){
 
@@ -25,22 +26,21 @@ static void * func(void * p){
 
     while(1){
         pthread_mutex_lock(&mutex);
-        if(task != 0){
-            if(task == -1){
-                task = 0;
-                pthread_mutex_unlock(&mutex);
-                break;
-            }
-            else{
-                cur = task;
-                task = 0;
-            }
+        while(task == 0){
+            pthread_cond_wait(&cond,&mutex);
+        }
+        if(task == -1){
+            task = 0;
+            pthread_mutex_unlock(&mutex);
+            pthread_cond_broadcast(&cond);
+            break;
+        }
+        else{
+            cur = task;
+            task = 0;
         }
         pthread_mutex_unlock(&mutex);
-        if(cur == 0){
-            sched_yield();
-            continue;
-        }
+        pthread_cond_broadcast(&cond);
 
         mask = 1;
         for(int i = 2;i <= cur / 2;++i){
@@ -79,38 +79,28 @@ int main(){
         }
     }
     for(int i = START;i <= END;++i){
-        while(1){
-            pthread_mutex_lock(&mutex);
-            if(task != 0){
-                pthread_mutex_unlock(&mutex);
-                sched_yield();
-                continue;
-            }
-            task = i;
-            pthread_mutex_unlock(&mutex);
-            break;
+        pthread_mutex_lock(&mutex);
+        while(task != 0){
+            pthread_cond_wait(&cond,&mutex);
         }
+        task = i;
+        pthread_mutex_unlock(&mutex);
+        pthread_cond_signal(&cond);
     }
 
-    for(int i = 0;i< THREAD_NUM;++i){
-        while(1){
-            pthread_mutex_lock(&mutex);
-            if(task != 0){
-                pthread_mutex_unlock(&mutex);
-                sched_yield();
-                continue;
-            }
-            task = -1;
-            pthread_mutex_unlock(&mutex);
-            break;
+    for(int i = 0;i < THREAD_NUM;++i){
+        pthread_mutex_lock(&mutex);
+        while(task != 0){
+            pthread_cond_wait(&cond,&mutex);
         }
+        task = -1;
+        pthread_mutex_unlock(&mutex);
+        pthread_cond_signal(&cond);
     }
 
     pthread_mutex_lock(&mutex);
     while(task != 0){
-        pthread_mutex_unlock(&mutex);
-        sched_yield();
-        pthread_mutex_unlock(&mutex);
+        pthread_cond_wait(&cond,&mutex);
     }
     pthread_mutex_unlock(&mutex);
 
@@ -118,7 +108,7 @@ int main(){
         pthread_join(tid[i],&ptr);
         free((struct args_st*)ptr);
     }
-
+    pthread_cond_destroy(&cond);
     pthread_mutex_destroy(&mutex);
     exit(0);
 }
