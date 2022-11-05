@@ -16,6 +16,6 @@ int main(int argc,char **argv){
     for(int i = 0;i < globres.gl_pathc;++i){
         fprintf(stderr,"%s\n",globres.gl_pathv[i]);
     }
-
+    globfree(&globres);
     exit(0);
 }
