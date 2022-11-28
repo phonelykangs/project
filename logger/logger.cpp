@@ -5,6 +5,8 @@
 #include<functional>
 #include<time.h>
 #include<tuple>
+#include<lexicalcast.h>
+#include<utils.h>
 
 namespace server{
 
@@ -263,6 +265,97 @@ void LogFormatter::init(){
             }
         }
     }
+}
+
+void LogAppender::setLevel(LogLevel::Level level){
+    MutexType::Lock lock(m_mutex);
+    m_level = level;
+}
+void LogAppender::setFormater(LogFormatter::ptr formater){
+    MutexType::Lock lock(m_mutex);
+    m_formater = formater;
+    if(m_formater)
+        m_hasFormater = true;
+    else 
+        m_hasFormater = false;
+}
+
+void StdoutAppender::log(std::shared_ptr<Logger> logger,LogLevel::Level level,LogEvent::ptr event){
+    MutexType::Lock lock(m_mutex);
+    if(level >= m_level){
+        m_formater->format(std::cout,logger,event,level);
+    }
+}
+std::string StdoutAppender::toYamlString(){
+    MutexType::Lock lock(m_mutex);
+    YAML::Node node;
+    node["type"] = "StdoutAppender";
+    if(m_level != LogLevel::Level::UNKNOW){
+        node["level"] = LogLevel::ToString(m_level);
+    }
+    if(m_hasFormater && m_formater){
+        node["formater"] = m_formater->getPattern();
+    }
+    std::stringstream ss;
+    ss << node;
+    return ss.str();
+}
+
+std::string LogFormatter::format(std::shared_ptr<Logger> logger,LogEvent::ptr event,LogLevel::Level level){
+    std::stringstream ss;
+    for(auto& item:m_items){
+        item->format(ss,logger,event,level);
+    }
+    return ss.str();
+}
+
+std::ostream& LogFormatter::format(std::ostream& os,std::shared_ptr<Logger> logger,LogEvent::ptr event,LogLevel::Level level){
+    for(auto& item:m_items){
+        item->format(os,logger,event,level);
+    }
+    return os;
+}
+
+FileAppender::FileAppender(const std::string& filename):m_filename(filename){
+    reopen();
+}
+
+void FileAppender::log(std::shared_ptr<Logger> logger,LogLevel::Level level,LogEvent::ptr event){
+    MutexType::Lock lock(m_mutex);
+    if(level >= m_level){
+        uint64_t now = event->getTime();
+        if((m_lastTime+4) <= now){
+            reopen();
+            m_lastTime = now;
+        }
+        if(!m_formater->format(m_filestream,logger,event,level)){
+            std::cout << "error" << std::endl;
+        }
+    }
+}
+
+std::string FileAppender::toYamlString(){
+    MutexType::Lock lock(m_mutex);
+    YAML::Node node;
+    node["type"] = "FileAppender";
+    node["file"] = m_filename;
+    if(m_level != LogLevel::Level::UNKNOW){
+        node["level"] = LogLevel::ToString(m_level);
+    }
+    if(m_hasFormater && m_formater){
+        node["formater"] = m_formater->getPattern();
+    }
+    std::stringstream ss;
+    ss << node;
+    return ss.str();
+}  
+
+bool FileAppender::reopen(){
+    MutexType::Lock lock(m_mutex);
+    if(m_filestream){
+        m_filestream.close();
+    }
+    return FSUtil::OpenForWrite(m_filestream,m_filename,std::ios::app);
 }
 
 }

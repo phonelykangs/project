@@ -8,6 +8,9 @@
 #include<iostream>
 #include<vector>
 #include"loglevel.h"
+#include<mutex.h>
+#include<fstream>
+#include<list>
 
 namespace server{
 
@@ -71,7 +74,7 @@ public:
     ~LogFormatter();
     void init();
     std::string format(std::shared_ptr<Logger> logger,LogEvent::ptr event,LogLevel::Level level);
-    std::string format(std::ostream& os,std::shared_ptr<Logger> logger,LogEvent::ptr event,LogLevel::Level level);
+    std::ostream& format(std::ostream& os,std::shared_ptr<Logger> logger,LogEvent::ptr event,LogLevel::Level level);
     const std::string getPattern() const {return m_pattern;};
     bool isError() const {return m_error;}
     class FormatItem{
@@ -86,13 +89,57 @@ private:
     bool m_error = false;
 };
 
+class LogAppender{
+friend class Logger;
+public:
+    typedef std::shared_ptr<LogAppender> ptr;
+    typedef Spinlock MutexType;
+    virtual ~LogAppender(){}
+    LogFormatter::ptr getFormater() const {return m_formater;}
+    LogLevel::Level getLevel() const {return m_level;}
+    void setLevel(LogLevel::Level level);
+    void setFormater(LogFormatter::ptr formater);
+    virtual std::string toYamlString() = 0;
+    virtual void log(std::shared_ptr<Logger> logger,LogLevel::Level level,LogEvent::ptr event) = 0;
+protected:
+    MutexType m_mutex;
+    LogFormatter::ptr m_formater;
+    bool m_hasFormater = false;
+    LogLevel::Level m_level = LogLevel::Level::DEBUG;
+};
+
 class Logger{
 public:
     typedef std::shared_ptr<Logger> ptr;
-
+    typedef Spinlock MutexType;
     const std::string& getName() const {return m_name;}
 private:
     std::string m_name;
+    LogLevel::Level m_level;
+    LogFormatter::ptr m_formater;
+    MutexType m_mutex;
+    std::list<LogAppender::ptr> m_appenders;
+    Logger::ptr m_root;
+};
+
+class StdoutAppender : public LogAppender{
+public:
+    typedef std::shared_ptr<StdoutAppender> ptr;
+    void log(std::shared_ptr<Logger> logger,LogLevel::Level level,LogEvent::ptr event) override;
+    std::string toYamlString() override;
+};
+
+class FileAppender : public LogAppender{
+public:
+    typedef std::shared_ptr<FileAppender> ptr;
+    FileAppender(const std::string& filename);
+    void log(std::shared_ptr<Logger> logger,LogLevel::Level level,LogEvent::ptr event) override;
+    std::string toYamlString() override;    
+    bool reopen();
+private:
+    std::string m_filename;
+    std::ofstream m_filestream;
+    uint64_t m_lastTime = 0;
 };
 
 }
