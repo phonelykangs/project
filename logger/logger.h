@@ -90,17 +90,17 @@ private:
 };
 
 class LogAppender{
-friend class Logger;
 public:
     typedef std::shared_ptr<LogAppender> ptr;
     typedef Spinlock MutexType;
     virtual ~LogAppender(){}
-    LogFormatter::ptr getFormater() const {return m_formater;}
-    LogLevel::Level getLevel() const {return m_level;}
+    LogFormatter::ptr getFormater();
+    LogLevel::Level getLevel();
     void setLevel(LogLevel::Level level);
     void setFormater(LogFormatter::ptr formater);
     virtual std::string toYamlString() = 0;
     virtual void log(std::shared_ptr<Logger> logger,LogLevel::Level level,LogEvent::ptr event) = 0;
+    bool hasFormater();
 protected:
     MutexType m_mutex;
     LogFormatter::ptr m_formater;
@@ -108,11 +108,27 @@ protected:
     LogLevel::Level m_level = LogLevel::Level::DEBUG;
 };
 
-class Logger{
+class Logger : public std::enable_shared_from_this<Logger> {
 public:
     typedef std::shared_ptr<Logger> ptr;
     typedef Spinlock MutexType;
+    Logger(const std::string& name = "root");
+    void debug(LogEvent::ptr event);
+    void info(LogEvent::ptr event);
+    void warn(LogEvent::ptr event);
+    void error(LogEvent::ptr event);
+    void fatal(LogEvent::ptr event);
     const std::string& getName() const {return m_name;}
+    void setFormater(const std::string& pattern);
+    void setFormater(const LogFormatter::ptr formater);
+    void addAppender(const LogAppender::ptr appender);
+    void delAppender(const LogAppender::ptr appender);
+    void log(LogLevel::Level level,LogEvent::ptr event);
+    void clearAppenders();
+    LogLevel::Level getLevel();
+    void setLevel(LogLevel::Level level);
+    std::string toYamlString();
+    LogFormatter::ptr getFormater();
 private:
     std::string m_name;
     LogLevel::Level m_level;
