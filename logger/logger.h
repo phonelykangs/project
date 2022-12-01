@@ -7,14 +7,40 @@
 #include<memory>
 #include<iostream>
 #include<vector>
-#include"loglevel.h"
-#include<mutex.h>
 #include<fstream>
 #include<list>
+#include"mutex.h"
+#include"utils.h"
+
+#define LOG(logger,level) \
+    if(logger->getLevel() <= level) \
+        server::LogEventWrap(std::make_shared<server::LogEvent>(logger,__FILE__,__LINE__, \
+        0,server::GetThreadId(),0,time(nullptr),"test",level))
+
+#define LOG_DEBUG(logger) LOG(logger,server::LogLevel::Level::DEBUG)
+#define LOG_INFO(logger) LOG(logger,server::LogLevel::Level::INFO)
+#define LOG_WARN(logger) LOG(logger,server::LogLevel::Level::WARN)
+#define LOG_ERROR(logger) LOG(logger,server::LogLevel::Level::ERROR)
+#define LOG_FATAL(logger) LOG(logger,server::LogLevel::Level::FATAL)
 
 namespace server{
 
 class Logger;
+
+class LogLevel{
+public:
+
+    enum Level{
+        UNKNOW = 0,
+        DEBUG = 1,
+        INFO = 2,
+        WARN = 3,
+        ERROR = 4,
+        FATAL = 5
+    };
+    static const char* ToString(LogLevel::Level level);
+    static LogLevel::Level FromString(const std::string& str);
+};
 
 class LogEvent{
 public:
@@ -50,6 +76,23 @@ private:
     LogLevel::Level m_level;
 };
 
+class LogEventWrap{
+public:
+    LogEventWrap(LogEvent::ptr event):m_event(event){}
+    ~LogEventWrap();
+    LogEvent::ptr getEvent() const {return m_event;}
+    std::stringstream& getSS() {return m_event->getSS();}
+private:
+    LogEvent::ptr m_event;
+};
+
+class LogManager{
+public:
+    
+private:
+
+};
+
 class LogFormatter{
 public:
     typedef std::shared_ptr<LogFormatter> ptr;
@@ -71,7 +114,7 @@ public:
      *  默认格式 "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"
      */
     LogFormatter(const std::string& pattern);
-    ~LogFormatter();
+    ~LogFormatter(){};
     void init();
     std::string format(std::shared_ptr<Logger> logger,LogEvent::ptr event,LogLevel::Level level);
     std::ostream& format(std::ostream& os,std::shared_ptr<Logger> logger,LogEvent::ptr event,LogLevel::Level level);
@@ -102,7 +145,7 @@ public:
     virtual void log(std::shared_ptr<Logger> logger,LogLevel::Level level,LogEvent::ptr event) = 0;
     bool hasFormater();
 protected:
-    MutexType m_mutex;
+    //MutexType m_mutex;
     LogFormatter::ptr m_formater;
     bool m_hasFormater = false;
     LogLevel::Level m_level = LogLevel::Level::DEBUG;
@@ -133,7 +176,7 @@ private:
     std::string m_name;
     LogLevel::Level m_level;
     LogFormatter::ptr m_formater;
-    MutexType m_mutex;
+    //MutexType m_mutex;
     std::list<LogAppender::ptr> m_appenders;
     Logger::ptr m_root;
 };

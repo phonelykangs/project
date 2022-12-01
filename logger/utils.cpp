@@ -3,8 +3,13 @@
 #include<sys/stat.h>
 #include<unistd.h>
 #include<string.h>
+#include<sys/syscall.h>
 
 namespace server{
+
+pid_t GetThreadId(){
+    return syscall(SYS_gettid);
+}
 
 static int __mkdir(const char* dirname){
     if(access(dirname,F_OK) == 0){

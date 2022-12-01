@@ -10,7 +10,7 @@ template<class T>
 class ScopedLockImpl{
 public:
     ScopedLockImpl(T& mutex)
-    m_mutex(mutex){
+    : m_mutex(m_mutex){
         m_mutex.lock();
         m_locked = true;
     }
