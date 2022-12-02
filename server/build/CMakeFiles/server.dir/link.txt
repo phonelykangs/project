@@ -1,1 +1,0 @@
-/usr/bin/c++ -fPIC  -rdynamic -O3 -fPIC -ggdb -std=c++11 -Wall -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations -shared -Wl,-soname,libserver.so -o lib/libserver.so CMakeFiles/server.dir/src/logger.cpp.o CMakeFiles/server.dir/src/utils.cpp.o CMakeFiles/server.dir/src/config.cpp.o 
