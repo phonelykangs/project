@@ -6,10 +6,17 @@
 #include<sys/stat.h>
 #include<unistd.h>
 #include<pthread.h>
+#include<cxxabi.h>
 
 namespace server{
 
 pid_t GetThreadId();
+
+template<typename T>
+const char* TypeToName(){
+    static const char* name = abi::__cxa_demangle(typeid(T).name(),nullptr,nullptr,nullptr);
+    return name;
+}
 
 class FSUtil{
 public:

@@ -1,0 +1,22 @@
+logs:
+      - name: system
+        level: DEBUG
+        appender:
+                 level: info
+                 type: FileAppender
+                 type: StdAppender
+      - name: root
+        level: INFO
+        appender: 
+                 level: info
+                 type: FileAppender
+                 type: StdAppender
+system: 
+        port: 12
+        value: 30.0     
+        int_vec :
+                  - 10
+                  - 20
+        int_list :
+                  - 30
+                  - 50

@@ -10,6 +10,7 @@
 #include<algorithm>
 #include<list>
 #include<iostream>
+#include<map>
 #include"logger.h"
 
 namespace server{
@@ -43,6 +44,7 @@ public:
 
 template<typename T>
 class LexicalCast<std::string,std::vector<T> >{
+public:
     std::vector<T> operator()(const std::string& str){
         YAML::Node node = YAML::Load(str);
         typename std::vector<T> vec;
@@ -59,7 +61,41 @@ class LexicalCast<std::string,std::vector<T> >{
 
 template<typename T>
 class LexicalCast<std::vector<T>,std::string >{
+public:
     std::string operator()(const std::vector<T>& vec){
+        YAML::Node node(YAML::NodeType::Sequence);
+        std::stringstream ss;
+        for(auto iter = vec.begin();iter != vec.end();++iter){
+            node.push_back(YAML::Load(LexicalCast<T,std::string>()(*iter)));
+        }
+        ss.clear();
+        ss.str("");
+        ss << node;
+        return ss.str();
+    }
+};
+
+template<typename T>
+class LexicalCast<std::string,std::list<T> >{
+public:
+    std::list<T> operator()(const std::string& str){
+        YAML::Node node = YAML::Load(str);
+        typename std::list<T> vec;
+        std::stringstream ss;
+        for(auto iter = node.begin();iter != node.end();++iter){
+            ss.clear();
+            ss.str("");
+            ss << *iter;
+            vec.push_back(LexicalCast<std::string,T>()(ss.str()));
+        }
+        return vec;
+    }
+};
+
+template<typename T>
+class LexicalCast<std::list<T>,std::string >{
+public:
+    std::string operator()(const std::list<T>& vec){
         YAML::Node node(YAML::NodeType::Sequence);
         std::stringstream ss;
         for(auto iter = vec.begin();iter != vec.end();++iter){
@@ -91,12 +127,12 @@ public:
         catch(const std::exception& e){
             std::cerr << e.what() << '\n';
         }
-        
+        return "";
     }
 
     void fromString(const std::string& str) override {
         try{
-            setValue(FromStr(str));
+            setValue(FromStr()(str));
         }
         catch(const std::exception& e){
             std::cerr << e.what() << '\n';
@@ -111,6 +147,8 @@ public:
         }
         m_val = val;
     }
+
+    std::string getTypeName() const override { return TypeToName<T>(); }
 private:
     T m_val;
 };
@@ -118,6 +156,7 @@ private:
 class Config{
 public:
     typedef std::unordered_map<std::string,ConfigVarBase::ptr> ConfigVarMap;
+    typedef RWLOCK RWMutexType;
 
     template<typename T>
     static typename ConfigVar<T>::ptr lookup(const std::string& name
@@ -125,15 +164,39 @@ public:
     ,const std::string& description){
         auto iter = GetDatas().find(name);
         if(iter != GetDatas().end()){
-            auto tem = std::dynamic_pointer_cast<ConfigVar<T> >(iter->second);
+            auto temp = std::dynamic_pointer_cast<ConfigVar<T> >(iter->second);
+            if(temp){
+                LOG_INFO(GET_LOG_ROOT()) << name << " exists! ";
+                return temp;
+            }
+            else{
+                LOG_ERROR(GET_LOG_ROOT()) << "Lookup name exists but Type not match";
+                return nullptr;
+            }
         }
+
+        if(name.find_first_not_of("abcdefghikjlmnopqrstuvwxyz._012345678") != std::string::npos){
+            LOG_ERROR(GET_LOG_ROOT()) << "LookUp invalid name";
+            throw std::invalid_argument(name);
+        }
+        
+        typename ConfigVar<T>::ptr val = std::make_shared<ConfigVar<T> >(name,default_value,description);
+        GetDatas()[name] = (ConfigVarBase::ptr)val;
+        return val;
     }
 
     static void LoadFromYaml(const YAML::Node& node);
+
+    static ConfigVarBase::ptr LookupBase(const std::string& name);
 private:
     static ConfigVarMap& GetDatas(){
         static ConfigVarMap s_datas;
         return s_datas;
+    }
+
+    static RWMutexType& GetMutex(){
+        static RWMutexType s_mutex;
+        return s_mutex;
     }
 };
     
