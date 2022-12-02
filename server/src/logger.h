@@ -17,7 +17,7 @@
 #define LOG(logger,level) \
     if(logger->getLevel() <= level) \
         server::LogEventWrap(std::make_shared<server::LogEvent>(logger,__FILE__,__LINE__, \
-        0,server::GetThreadId(),0,time(nullptr),"test",level)).getSS();
+        0,server::GetThreadId(),0,time(nullptr),"test",level)).getSS()
 
 #define LOG_DEBUG(logger) LOG(logger,server::LogLevel::Level::DEBUG)
 #define LOG_INFO(logger) LOG(logger,server::LogLevel::Level::INFO)
@@ -25,8 +25,8 @@
 #define LOG_ERROR(logger) LOG(logger,server::LogLevel::Level::ERROR)
 #define LOG_FATAL(logger) LOG(logger,server::LogLevel::Level::FATAL)
 
-#define GET_LOG_ROOT() LogMgr::GetInstance()->getRoot()
-#define GET_LOG_NAME(name) LogMgr::GetInstance()->getLogger(name)
+#define GET_LOG_ROOT() server::LogMgr::GetInstance()->getRoot()
+#define GET_LOG_NAME(name) server::LogMgr::GetInstance()->getLogger(name)
 
 namespace server{
 

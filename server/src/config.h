@@ -10,6 +10,7 @@
 #include<algorithm>
 #include<list>
 #include<iostream>
+#include"logger.h"
 
 namespace server{
 
@@ -22,8 +23,8 @@ public:
         std::transform(m_name.begin(),m_name.end(),m_name.begin(),::tolower);
     };
     virtual ~ConfigVarBase(){};
-    std::string const getName() const { return m_name;}
-    std::string const getDescription() const { return m_description;}
+    const std::string& getName() const { return m_name;}
+    const std::string& getDescription() const { return m_description;}
     virtual std::string toString() = 0;
     virtual void fromString(const std::string& str) = 0;
     virtual std::string getTypeName() const = 0;

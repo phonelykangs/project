@@ -1,10 +1,15 @@
 #include"logger.h"
 #include<memory.h>
+#include<yaml-cpp/yaml.h>
+
+void testYAML(){
+    YAML::Node node = YAML::LoadFile("./test.yml");
+
+
+    LOG_ERROR(GET_LOG_ROOT()) << node;
+}
 
 int main(){
-    server::Logger::ptr logger = std::make_shared<server::Logger>();
-    logger->addAppender(std::make_shared<server::StdoutAppender>());
-    logger->addAppender(std::make_shared<server::FileAppender>("logfile.txt"));
-    LOG_FATAL(logger);
+    testYAML();
     return 0;
 }
