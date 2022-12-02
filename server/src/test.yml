@@ -1,0 +1,13 @@
+logs:
+      -name:root
+       level:info
+       appender:
+                -type:FileAppender
+                 path:log.txt
+                -type:StdoutAppender
+      -name:system
+       level:debug
+       appender:
+                -type:FileAppender
+                 path:log.txt
+                -type:StdoutAppender

@@ -1,0 +1,2 @@
+static
+lock
