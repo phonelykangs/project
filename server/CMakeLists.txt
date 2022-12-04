@@ -14,10 +14,11 @@ set(LIB_SRC
 
 set(LIB
     yaml-cpp)
+    
 add_library(server SHARED ${LIB_SRC})
-add_executable(main src/main.cpp)
-add_dependencies(main server)
-target_link_libraries(main server ${LIB})
+add_executable(testyaml test/testyaml.cpp)
+add_dependencies(testyaml server)
+target_link_libraries(testyaml server ${LIB})
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build/bin)
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build/lib)
