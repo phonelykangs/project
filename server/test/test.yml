@@ -1,16 +1,24 @@
 logs:
       - name: system
         level: DEBUG
-        appender:
-                 level: info
-                 type: FileAppender
-                 type: StdAppender
+        formater: "%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"
+        appenders:
+                 - level: INFO
+                   type: FileAppender
+                   file: system.txt
+                   formater: "%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"
+                 - type: StdAppender
+                   level: error
+                   formater: "%T%F%T[%p]"
       - name: root
         level: INFO
-        appender: 
-                 level: info
-                 type: FileAppender
-                 type: StdAppender
+        formater: "%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"
+        appenders: 
+                 - level: info
+                   type: FileAppender
+                   file: root.txt
+                   formater: "%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"
+                 - type: StdAppender
 system: 
         port: 10
         value: 20     
