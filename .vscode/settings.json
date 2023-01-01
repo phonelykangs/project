@@ -50,5 +50,6 @@
         "iostream": "cpp",
         "fstream": "cpp",
         "unordered_set": "cpp"
-    }
+    },
+    "cmake.sourceDirectory": "${workspaceFolder}/server"
 }
