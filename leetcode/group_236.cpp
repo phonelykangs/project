@@ -1,5 +1,7 @@
 #include<string>
 #include<vector>
+#include<unordered_map>
+#include<iostream>
 
 class Solution {
 public:
@@ -30,6 +32,32 @@ public:
     }
 
     int equalPairs(std::vector<std::vector<int>>& grid) {  //  2352
-        
+        int res = 0;
+        int rows = grid.size();
+        if(rows == 0){
+            return 0;
+        }
+        int columns = grid[0].size();
+        std::unordered_map<std::string,int> u_map;
+        for(int i = 0;i < rows;++i){
+            std::string cur = "";
+            for(int j = 0;j < columns;++j){
+                cur += std::to_string(grid[i][j]);
+                cur += ",";
+            }
+            ++u_map[cur];
+        }
+        // for(auto iter = u_map.begin();iter != u_map.end();++iter){
+        //     std::cout << iter->first << " " << iter->second << std::endl;
+        // }
+        for(int i = 0;i < columns;++i){
+            std::string cur = "";
+            for(int j = 0;j < rows;++j){
+                cur += std::to_string(grid[j][i]);
+                cur += ",";
+            }
+            res += u_map[cur];
+        }
+        return res;
     }
 };
