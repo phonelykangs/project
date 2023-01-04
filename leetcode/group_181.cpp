@@ -56,4 +56,34 @@ public:
         }
         return res;
     }
+
+    int maxValue(int n, int index, int maxSum) {  // 1802
+        int left = 1;
+        int right = maxSum;
+        while(left < right){
+            int mid = left + (right - left) / 2 + 1;
+            if(valid(mid,index,n,maxSum)){
+                left = mid;
+            }
+            else{
+                right = mid - 1;
+            }
+        }
+        return left;
+    }
+
+    bool valid(int mid, int index, int n ,int maxSum){
+        int left = index;
+        int right = n - index - 1;
+        return mid + calculate(mid, left) + calculate(mid, right) <= maxSum;
+    }
+
+    long calculate(int big, int length){
+        if(length+1 <= big){
+            return (long)length * (long)(big-length+big-1) / 2;
+        }
+        else{
+            return (long)(big-1) * (long)big / 2 + (long)(length+1-big);
+        }
+    }
 };

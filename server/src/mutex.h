@@ -3,8 +3,19 @@
 
 #include"nocopyable.h"
 #include<pthread.h>
+#include<semaphore.h>
 
 namespace server{
+
+class Semaphore : Nocopyable{
+public:
+    Semaphore(u_int32_t count = 0);
+    ~Semaphore();
+    void wait();
+    void notify();
+private:
+    sem_t m_semaphore;
+};
 
 template<class T>
 class ScopedLockImpl{

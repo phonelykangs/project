@@ -1,4 +1,29 @@
 #include<stack>
+#include<vector>
+
+struct ListNode{
+    int val;
+    ListNode* next;
+    ListNode() : val(0), next(nullptr) {}
+};
+
+
+class Solution {
+public:
+    std::vector<int> reversePrint(ListNode* head) {  //offer 06
+        std::stack<int> stk;
+        while (head){
+            stk.push(head->val);
+            head = head->next;
+        }
+        std::vector<int> ret;
+        while(!stk.empty()){
+            ret.push_back(stk.top());
+            stk.pop();
+        }
+        return ret;
+    }
+};
 
 class CQueue {  //  offer 09
 public:
