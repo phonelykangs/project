@@ -4,6 +4,8 @@
 #include"nocopyable.h"
 #include<pthread.h>
 #include<semaphore.h>
+#include<stdexcept>
+#include<atomic>
 
 namespace server{
 
@@ -21,7 +23,7 @@ template<class T>
 class ScopedLockImpl{
 public:
     ScopedLockImpl(T& mutex)
-    : m_mutex(m_mutex){
+    : m_mutex(mutex){
         m_mutex.lock();
         m_locked = true;
     }
@@ -101,6 +103,27 @@ private:
     bool m_locked;
 };
 
+class Mutex : Nocopyable{
+public:
+
+    typedef ScopedLockImpl<Mutex> Lock;
+
+    Mutex(){
+        pthread_mutex_init(&m_mutex,nullptr);
+    }
+    ~Mutex(){
+        pthread_mutex_destroy(&m_mutex);
+    }
+    void lock(){
+        pthread_mutex_lock(&m_mutex);
+    }
+    void unlock(){
+        pthread_mutex_unlock(&m_mutex);
+    }
+private:
+    pthread_mutex_t m_mutex;
+};
+
 class Spinlock : Nocopyable{
 public:
 
@@ -145,6 +168,22 @@ public:
     }
 private:
     pthread_rwlock_t m_mutex;
+};
+
+class CASLock : Nocopyable{
+public:
+    CASLock(){
+        m_mutex.clear();
+    }
+    ~CASLock(){}
+    void lock(){
+        while(std::atomic_flag_test_and_set_explicit(&m_mutex,std::memory_order::memory_order_acquire));
+    }
+    void unlock(){
+        std::atomic_flag_clear_explicit(&m_mutex,std::memory_order::memory_order_release);
+    }
+private:
+    volatile std::atomic_flag m_mutex;
 };
 
 }

@@ -1,9 +1,8 @@
 #include"mutex.h"
-#include<stdexcept>
 
 namespace server{
 
-Semaphore::Semaphore(u_int32_t count = 0){
+Semaphore::Semaphore(u_int32_t count){
     if(sem_init(&m_semaphore,0,count)){
         throw std::logic_error("sem_init error");
     }

@@ -10,15 +10,19 @@ set(LIB_SRC
     src/logger.cpp
     src/utils.cpp
     src/config.cpp
+    src/mutex.cpp
+    src/utils.cpp
+    src/thread.cpp
     )
 
 set(LIB
-    yaml-cpp)
+    yaml-cpp 
+    pthread)
     
 add_library(server SHARED ${LIB_SRC})
-add_executable(testyaml test/testyaml.cpp)
-add_dependencies(testyaml server)
-target_link_libraries(testyaml server ${LIB})
+add_executable(testThread test/testThread.cpp)
+add_dependencies(testThread server)
+target_link_libraries(testThread server ${LIB})
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build/bin)
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build/lib)
