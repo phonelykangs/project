@@ -77,4 +77,12 @@ void Config::LoadFromYaml(const YAML::Node& node){
     }
 }
 
+void Config::visit(std::function<void(ConfigVarBase::ptr)> cb){
+    RWMutexType::ReadLock rdlock(GetMutex());
+    ConfigVarMap& m = GetDatas();
+    for(auto iter = m.begin();iter != m.end();++iter){
+        cb(iter->second);
+    }
+}
+
 }

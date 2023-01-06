@@ -256,7 +256,7 @@ public:
 
     std::string toString() override {
         try{
-            //RWMutexType::ReadLock rlock(m_rwmutex);
+            RWMutexType::ReadLock rlock(m_rwmutex);
             return ToStr()(m_val);
         }
         catch(const std::exception& e){
@@ -280,13 +280,13 @@ public:
     }
 
     T getValue(){
-        //RWMutexType::ReadLock rlock(m_rwmutex);
+        RWMutexType::ReadLock rlock(m_rwmutex);
          return m_val; 
     }
 
     void setValue(const T& val){
         {
-            //RWMutexType::ReadLock rlock(m_rwmutex);
+            RWMutexType::ReadLock rlock(m_rwmutex);
             if(val == m_val){
                 return;
             }
@@ -294,25 +294,25 @@ public:
                 iter->second(m_val,val);
             }
         }
-        //RWMutexType::WriteLock wlock(m_rwmutex);
+        RWMutexType::WriteLock wlock(m_rwmutex);
         m_val = val;
     }
 
     uint64_t addCallBackFunc(on_change_cb cb){
         static uint64_t s_func_id = 0;
-        //RWMutexType::WriteLock wlock(m_rwmutex);
+        RWMutexType::WriteLock wlock(m_rwmutex);
         ++s_func_id;
         m_cbs[s_func_id] = cb;
         return s_func_id;
     }
 
     void delCallBackFunc(uint64_t key){
-        //RWMutexType::WriteLock wlock(m_rwmutex);
+        RWMutexType::WriteLock wlock(m_rwmutex);
         m_cbs.erase(key);
     }
 
     void delCallBackFunc(on_change_cb cb){
-        //RWMutexType::WriteLock wlock(m_rwmutex);
+        RWMutexType::WriteLock wlock(m_rwmutex);
         for(auto iter = m_cbs.begin();iter != m_cbs.end();++iter){
             if(iter->second == cb){
                 m_cbs.erase(iter);
@@ -321,19 +321,19 @@ public:
     }
 
     on_change_cb getCallBackFunc(uint64_t key){
-        //RWMutexType::ReadLock rlock(m_rwmutex);
+        RWMutexType::ReadLock rlock(m_rwmutex);
         auto iter = m_cbs.find(key);
         return iter == m_cbs.end() ? nullptr : m_cbs[key];
     }
 
     void clearCallBacks(){
-        //RWMutexType::WriteLock wlock(m_rwmutex);
+        RWMutexType::WriteLock wlock(m_rwmutex);
         m_cbs.clear();
     }
 
     std::string getTypeName() const override { return TypeToName<T>(); }
 private:
-    //RWMutexType m_rwmutex;
+    RWMutexType m_rwmutex;
     T m_val;
     std::map<uint64_t,on_change_cb> m_cbs;
 };
@@ -382,8 +382,9 @@ public:
     }
 
     static void LoadFromYaml(const YAML::Node& node);
-
     static ConfigVarBase::ptr LookupBase(const std::string& name);
+    static void visit(std::function<void(ConfigVarBase::ptr)> cb);
+
 private:
     static ConfigVarMap& GetDatas(){
         static ConfigVarMap s_datas;

@@ -143,7 +143,7 @@ public:
     virtual void log(std::shared_ptr<Logger> logger,LogLevel::Level level,LogEvent::ptr event) = 0;
     bool hasFormater();
 protected:
-    //MutexType m_mutex;
+    MutexType m_mutex;
     LogFormatter::ptr m_formater;
     bool m_hasFormater = false;
     LogLevel::Level m_level = LogLevel::Level::DEBUG;
@@ -175,7 +175,7 @@ private:
     std::string m_name;
     LogLevel::Level m_level;
     LogFormatter::ptr m_formater;
-   //MutexType m_mutex;
+    MutexType m_mutex;
     std::list<LogAppender::ptr> m_appenders;
     Logger::ptr m_root;
 };

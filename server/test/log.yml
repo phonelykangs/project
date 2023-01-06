@@ -1,0 +1,13 @@
+logs:
+      - name: system
+        level: DEBUG
+        appenders:
+                 - level: DEBUG
+                   type: FileAppender
+                   file: system.txt
+      - name: root
+        level: DEBUG
+        appenders: 
+                 - level: DEBUG
+                   type: FileAppender
+                   file: root.txt
